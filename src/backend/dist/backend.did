@@ -1,0 +1,203 @@
+type WeekNote = 
+ record {
+   note: text;
+   scanImageRef: opt text;
+   week: nat;
+ };
+type UserRole__1 = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserRole = 
+ variant {
+   admin;
+   doctor;
+   patient;
+ };
+type UserId = text;
+type User = 
+ record {
+   abhaId: opt text;
+   createdAt: Timestamp;
+   email: text;
+   id: UserId;
+   name: text;
+   phone: text;
+   role: UserRole;
+ };
+type Timestamp = int;
+type TimeSlot = 
+ record {
+   day: text;
+   endTime: text;
+   id: text;
+   isAvailable: bool;
+   startTime: text;
+ };
+type Testimonial = 
+ record {
+   content: text;
+   department: text;
+   id: text;
+   patientName: text;
+   rating: nat;
+ };
+type Report = 
+ record {
+   date: text;
+   doctorId: text;
+   fileName: text;
+   fileRef: text;
+   id: text;
+   notes: opt text;
+   patientId: UserId;
+   reportType: text;
+ };
+type PregnancyData = 
+ record {
+   currentWeek: nat;
+   id: text;
+   lastUpdated: Timestamp;
+   notes: vec WeekNote;
+   patientId: UserId;
+   startDate: text;
+ };
+type MenstrualCycle = 
+ record {
+   cycleLength: nat;
+   id: text;
+   notes: opt text;
+   patientId: UserId;
+   startDate: text;
+   symptoms: vec text;
+ };
+type Hospital = 
+ record {
+   address: text;
+   city: text;
+   doctorIds: vec text;
+   emergency: text;
+   facilities: vec text;
+   id: text;
+   imageUrl: opt text;
+   name: text;
+   phone: text;
+   state: text;
+ };
+type HealthPackage = 
+ record {
+   category: text;
+   description: text;
+   id: text;
+   isActive: bool;
+   name: text;
+   price: nat;
+   tests: vec text;
+ };
+type Doctor = 
+ record {
+   availableSlots: vec TimeSlot;
+   bio: text;
+   experience: nat;
+   hospitalIds: vec text;
+   id: text;
+   imageUrl: opt text;
+   name: text;
+   qualifications: text;
+   rating: float64;
+   speciality: text;
+   userId: UserId;
+ };
+type Blog = 
+ record {
+   author: text;
+   category: text;
+   content: text;
+   excerpt: text;
+   id: text;
+   imageUrl: opt text;
+   isPublished: bool;
+   publishDate: text;
+   title: text;
+ };
+type AppointmentStatus = 
+ variant {
+   cancelled;
+   completed;
+   confirmed;
+   pending;
+ };
+type Appointment = 
+ record {
+   createdAt: Timestamp;
+   date: text;
+   department: text;
+   doctorId: text;
+   hospitalId: text;
+   id: text;
+   notes: opt text;
+   patientId: UserId;
+   slot: text;
+   status: AppointmentStatus;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  addMenstrualCycle: (startDate: text, cycleLength: nat, symptoms: vec text,
+   notes: opt text) -> (text);
+  addTestimonial: (testimonial: Testimonial) -> (bool);
+  addWeekNote: (week: nat, note: text, scanImageRef: opt text) -> (bool);
+  assignCallerUserRole: (user: principal, role: UserRole__1) -> ();
+  bookAppointment: (doctorId: text, hospitalId: text, department: text, slot:
+   text, date: text, notes: opt text) -> (text);
+  cancelAppointment: (id: text) -> (bool);
+  createBlog: (blog: Blog) -> (bool);
+  createDoctor: (doctor: Doctor) -> (bool);
+  createHealthPackage: (pkg: HealthPackage) -> (bool);
+  createHospital: (hospital: Hospital) -> (bool);
+  deleteBlog: (id: text) -> (bool);
+  deleteDoctor: (id: text) -> (bool);
+  deleteHospital: (id: text) -> (bool);
+  deleteTestimonial: (id: text) -> (bool);
+  getAppointmentById: (id: text) -> (opt Appointment) query;
+  getBlogById: (id: text) -> (opt Blog) query;
+  getCallerUserRole: () -> (UserRole__1) query;
+  getDoctorById: (id: text) -> (opt Doctor) query;
+  getHealthPackage: (id: text) -> (opt HealthPackage) query;
+  getHospitalById: (id: text) -> (opt Hospital) query;
+  getMyPregnancyData: () -> (opt PregnancyData) query;
+  getMyProfile: () -> (opt User) query;
+  getReport: (id: text) -> (opt Report) query;
+  getUserById: (id: UserId) -> (opt User) query;
+  isCallerAdmin: () -> (bool) query;
+  listAllAppointments: () -> (vec Appointment) query;
+  listAllBlogs: () -> (vec Blog) query;
+  listAllUsers: () -> (vec User) query;
+  listAppointmentsByDoctor: (doctorId: text) -> (vec Appointment) query;
+  listDoctors: () -> (vec Doctor) query;
+  listDoctorsByHospital: (hospitalId: text) -> (vec Doctor) query;
+  listDoctorsBySpeciality: (speciality: text) -> (vec Doctor) query;
+  listHealthPackages: () -> (vec HealthPackage) query;
+  listHospitals: () -> (vec Hospital) query;
+  listHospitalsByCity: (city: text) -> (vec Hospital) query;
+  listMyAppointments: () -> (vec Appointment) query;
+  listMyMenstrualCycles: () -> (vec MenstrualCycle) query;
+  listMyReports: () -> (vec Report) query;
+  listPublishedBlogs: () -> (vec Blog) query;
+  listTestimonials: () -> (vec Testimonial) query;
+  listUsersByRole: (role: UserRole) -> (vec User) query;
+  registerUser: (name: text, email: text, phone: text, role: UserRole,
+   abhaId: opt text) -> (text);
+  updateAppointmentStatus: (id: text, status: AppointmentStatus) -> (bool);
+  updateBlog: (blog: Blog) -> (bool);
+  updateDoctor: (doctor: Doctor) -> (bool);
+  updateHealthPackage: (pkg: HealthPackage) -> (bool);
+  updateHospital: (hospital: Hospital) -> (bool);
+  updateMenstrualCycle: (cycle: MenstrualCycle) -> (bool);
+  updateMyProfile: (name: text, phone: text, abhaId: opt text) -> (bool);
+  updateSlotAvailability: (doctorId: text, slotId: text, isAvailable:
+   bool) -> (bool);
+  uploadReport: (report: Report) -> (bool);
+  upsertPregnancyData: (currentWeek: nat, startDate: text) -> (bool);
+}

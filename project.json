@@ -1,0 +1,26 @@
+{
+  "overview": "A production-ready full-stack Hospital Management System for a Gynecology-focused Indian hospital, inspired by Sahyadri Hospitals. Features patient booking, doctor and admin dashboards, pregnancy & menstrual trackers, health packages, blogs, and a full public website experience.",
+  "features": [
+    "Multi-step online appointment booking",
+    "Patient dashboard with pregnancy & menstrual trackers",
+    "Doctor dashboard with prescription uploads",
+    "Admin dashboard with analytics and content management",
+    "Find A Doctor with search and filters",
+    "Health packages catalog",
+    "19 pages with full hospital navigation",
+    "Role-based access (Patient, Doctor, Admin)",
+    "Blue + White + Pink hospital theme",
+    "Responsive mobile-first design"
+  ],
+  "category": "healthcare",
+  "tags": [
+    "hospital",
+    "healthcare",
+    "gynecology",
+    "appointments",
+    "india",
+    "patient-management",
+    "telemedicine"
+  ],
+  "last_updated": "2026-04-10T18:56:59.286Z"
+}

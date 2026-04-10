@@ -1,0 +1,198 @@
+// Version: 1.0.0
+type AppointmentStatus__679172861 =
+  {#cancelled; #completed; #confirmed; #pending};
+type Appointment__77617247 =
+  {
+    createdAt : Timestamp__301639476;
+    date : Text;
+    department : Text;
+    doctorId : Text;
+    hospitalId : Text;
+    id : Text;
+    notes : ?Text;
+    patientId : UserId__158757552;
+    slot : Text;
+    status : AppointmentStatus__679172861
+  };
+type Blog__891579727 =
+  {
+    author : Text;
+    category : Text;
+    content : Text;
+    excerpt : Text;
+    id : Text;
+    imageUrl : ?Text;
+    isPublished : Bool;
+    publishDate : Text;
+    title : Text
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type Doctor__468753071 =
+  {
+    availableSlots : [TimeSlot__34480255];
+    bio : Text;
+    experience : Nat;
+    hospitalIds : [Text];
+    id : Text;
+    imageUrl : ?Text;
+    name : Text;
+    qualifications : Text;
+    rating : Float;
+    speciality : Text;
+    userId : UserId__158757552
+  };
+type HealthPackage__428673652 =
+  {
+    category : Text;
+    description : Text;
+    id : Text;
+    isActive : Bool;
+    name : Text;
+    price : Nat;
+    tests : [Text]
+  };
+type Hospital__115818847 =
+  {
+    address : Text;
+    city : Text;
+    doctorIds : [Text];
+    emergency : Text;
+    facilities : [Text];
+    id : Text;
+    imageUrl : ?Text;
+    name : Text;
+    phone : Text;
+    state : Text
+  };
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type MenstrualCycle__252013704 =
+  {
+    cycleLength : Nat;
+    id : Text;
+    notes : ?Text;
+    patientId : UserId__158757552;
+    startDate : Text;
+    symptoms : [Text]
+  };
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type PregnancyData__238908254 =
+  {
+    currentWeek : Nat;
+    id : Text;
+    lastUpdated : Timestamp__301639476;
+    notes : [WeekNote__292025289];
+    patientId : UserId__158757552;
+    startDate : Text
+  };
+type Report__36839974 =
+  {
+    date : Text;
+    doctorId : Text;
+    fileName : Text;
+    fileRef : Text;
+    id : Text;
+    notes : ?Text;
+    patientId : UserId__158757552;
+    reportType : Text
+  };
+type Testimonial__126880530 =
+  {
+    content : Text;
+    department : Text;
+    id : Text;
+    patientName : Text;
+    rating : Nat
+  };
+type TimeSlot__34480255 =
+  {
+    day : Text;
+    endTime : Text;
+    id : Text;
+    isAvailable : Bool;
+    startTime : Text
+  };
+type Timestamp__301639476 = Int;
+type UserId__158757552 = Text;
+type UserRole__1054455867 = {#admin; #guest; #user};
+type UserRole__451090586 = {#admin; #doctor; #patient};
+type User__98118558 =
+  {
+    abhaId : ?Text;
+    createdAt : Timestamp__301639476;
+    email : Text;
+    id : UserId__158757552;
+    name : Text;
+    phone : Text;
+    role : UserRole__451090586
+  };
+type WeekNote__292025289 = {note : Text; scanImageRef : ?Text; week : Nat};
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__605269027<Principal, UserRole__1054455867>
+    };
+  stable appointments :
+    {
+      var root : Node__46230540<Text, Appointment__77617247>;
+      var size : Nat__490723111
+    };
+  stable blogs :
+    {
+      var root : Node__46230540<Text, Blog__891579727>;
+      var size : Nat__490723111
+    };
+  stable cycles :
+    {
+      var root : Node__46230540<Text, MenstrualCycle__252013704>;
+      var size : Nat__490723111
+    };
+  stable doctors :
+    {
+      var root : Node__46230540<Text, Doctor__468753071>;
+      var size : Nat__490723111
+    };
+  stable hospitals :
+    {
+      var root : Node__46230540<Text, Hospital__115818847>;
+      var size : Nat__490723111
+    };
+  stable var nextAppointmentId : Nat;
+  stable var nextCycleId : Nat;
+  stable var nextReportId : Nat;
+  stable packages :
+    {
+      var root : Node__46230540<Text, HealthPackage__428673652>;
+      var size : Nat__490723111
+    };
+  stable pregnancies :
+    {
+      var root : Node__46230540<UserId__158757552, PregnancyData__238908254>;
+      var size : Nat__490723111
+    };
+  stable reports :
+    {
+      var root : Node__46230540<Text, Report__36839974>;
+      var size : Nat__490723111
+    };
+  stable testimonials :
+    {
+      var root : Node__46230540<Text, Testimonial__126880530>;
+      var size : Nat__490723111
+    };
+  stable users :
+    {
+      var root : Node__46230540<UserId__158757552, User__98118558>;
+      var size : Nat__490723111
+    }
+};
