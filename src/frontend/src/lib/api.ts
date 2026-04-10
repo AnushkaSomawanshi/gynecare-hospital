@@ -1,12 +1,14 @@
-// API helper functions — wraps backend actor calls via useActor hook
-// All data operations go through hooks/useQueries.ts which uses these helpers
+// API helper functions — REST API calls to Express backend with static data fallback
 
+import apiClient from "@/lib/apiClient";
 import type {
   Appointment,
+  Blog,
   BookingData,
   Doctor,
   FilterOptions,
   HealthPackage,
+  Hospital,
   LabReport,
   MedicalRecord,
   MenstrualCycle,
@@ -14,7 +16,7 @@ import type {
   User,
 } from "@/types";
 
-// ─── Simulated data store (until backend methods are implemented) ─────────────
+// ─── Simulated data store (fallback when backend is unavailable) ──────────────
 
 export const HOSPITALS_DATA = [
   {
@@ -395,3 +397,155 @@ export function mapBackendPregnancyTracker(_raw: unknown): PregnancyTracker {
 export function mapBackendMenstrualCycle(_raw: unknown): MenstrualCycle {
   return _raw as MenstrualCycle;
 }
+
+// ─── REST API functions ───────────────────────────────────────────────────────
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+interface AuthApiResponse {
+  success: boolean;
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    role: import("@/types").UserRole;
+    avatar?: string;
+  };
+}
+
+export async function apiFetchDoctors(
+  filter?: ApiDoctorsFilter & { search?: string },
+): Promise<Doctor[]> {
+  try {
+    const params = new URLSearchParams();
+    if (filter?.location) params.set("location", filter.location);
+    if (filter?.speciality) params.set("speciality", filter.speciality);
+    if (filter?.search) params.set("search", filter.search);
+    const query = params.toString();
+    const res = await apiClient.get<ApiResponse<Doctor[]>>(
+      `/api/doctors${query ? `?${query}` : ""}`,
+    );
+    if (res.success && res.data) {
+      return res.data.map((d) => ({ ...d, id: (d as unknown as { _id: string })._id ?? d.id }));
+    }
+    return DOCTORS_DATA;
+  } catch {
+    return DOCTORS_DATA;
+  }
+}
+
+export async function apiFetchDoctorById(id: string): Promise<Doctor | null> {
+  try {
+    const res = await apiClient.get<ApiResponse<Doctor>>(`/api/doctors/${id}`);
+    if (res.success && res.data) {
+      return { ...res.data, id: (res.data as unknown as { _id: string })._id ?? res.data.id };
+    }
+    return DOCTORS_DATA.find((d) => d.id === id) ?? null;
+  } catch {
+    return DOCTORS_DATA.find((d) => d.id === id) ?? null;
+  }
+}
+
+export async function apiFetchHospitals(): Promise<Hospital[]> {
+  try {
+    const res = await apiClient.get<ApiResponse<Hospital[]>>("/api/hospitals");
+    if (res.success && res.data) {
+      return res.data.map((h) => ({ ...h, id: (h as unknown as { _id: string })._id ?? h.id }));
+    }
+    return HOSPITALS_DATA as Hospital[];
+  } catch {
+    return HOSPITALS_DATA as Hospital[];
+  }
+}
+
+export async function apiFetchBlogs(): Promise<Blog[]> {
+  try {
+    const res = await apiClient.get<ApiResponse<Blog[]>>("/api/blogs");
+    if (res.success && res.data) {
+      return res.data.map((b) => ({ ...b, id: (b as unknown as { _id: string })._id ?? b.id }));
+    }
+    return BLOGS_DATA as Blog[];
+  } catch {
+    return BLOGS_DATA as Blog[];
+  }
+}
+
+export async function apiFetchBlogById(id: string): Promise<Blog | null> {
+  try {
+    const res = await apiClient.get<ApiResponse<Blog>>(`/api/blogs/${id}`);
+    if (res.success && res.data) {
+      return { ...res.data, id: (res.data as unknown as { _id: string })._id ?? res.data.id };
+    }
+    return (BLOGS_DATA as Blog[]).find((b) => b.id === id) ?? null;
+  } catch {
+    return (BLOGS_DATA as Blog[]).find((b) => b.id === id) ?? null;
+  }
+}
+
+export async function apiLogin(
+  email: string,
+  password: string,
+): Promise<AuthApiResponse> {
+  return apiClient.post<AuthApiResponse>("/api/auth/login", { email, password });
+}
+
+export async function apiRegister(data: {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  role?: import("@/types").UserRole;
+  abhaId?: string;
+}): Promise<AuthApiResponse> {
+  return apiClient.post<AuthApiResponse>("/api/auth/register", data);
+}
+
+export async function apiGetMe(_token?: string): Promise<{ id: string; name: string; email: string; phone: string; role: import("@/types").UserRole }> {
+  const res = await apiClient.get<ApiResponse<{ id: string; name: string; email: string; phone: string; role: import("@/types").UserRole }>>("/api/auth/me", true);
+  if (!res.success || !res.data) throw new Error("Not authenticated");
+  return res.data;
+}
+
+export async function apiFetchAppointments(): Promise<Appointment[]> {
+  try {
+    const res = await apiClient.get<ApiResponse<Appointment[]>>("/api/appointments", true);
+    if (res.success && res.data) {
+      return res.data.map((a) => ({
+        ...a,
+        id: (a as unknown as { _id: string })._id ?? a.id,
+        patientId: String((a as unknown as { patientId: unknown }).patientId),
+      }));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export async function apiCreateAppointment(
+  data: Omit<Appointment, "id" | "createdAt" | "patientId" | "patientName">,
+): Promise<Appointment> {
+  const res = await apiClient.post<ApiResponse<Appointment>>(
+    "/api/appointments",
+    data,
+    true,
+  );
+  if (!res.success || !res.data) throw new Error("Failed to create appointment");
+  const apt = res.data;
+  return {
+    ...apt,
+    id: (apt as unknown as { _id: string })._id ?? apt.id,
+    patientId: String((apt as unknown as { patientId: unknown }).patientId),
+  };
+}
+
+export async function apiCancelAppointment(id: string): Promise<void> {
+  await apiClient.patch(`/api/appointments/${id}/cancel`, undefined, true);
+}
+

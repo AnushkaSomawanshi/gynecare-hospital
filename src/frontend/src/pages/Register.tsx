@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRegister } from "@/lib/api";
+import { setToken } from "@/lib/auth";
 import { isValidEmail, isValidPhone } from "@/lib/utils";
 import type { UserRole } from "@/types";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -124,17 +126,41 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    loginAsRole({
-      id: `user-${Date.now()}`,
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      role: form.role,
-    });
-    toast.success("Account created successfully! Welcome to GyneCare.");
-    void navigate({ to: ROLE_ROUTES[form.role] });
-    setLoading(false);
+    try {
+      const res = await apiRegister({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+        role: form.role,
+        abhaId: form.abhaId || undefined,
+      });
+      setToken(res.token);
+      loginAsRole({
+        id: String(res.user.id),
+        name: res.user.name,
+        email: res.user.email,
+        phone: res.user.phone,
+        role: res.user.role,
+        avatar: res.user.avatar,
+      });
+      toast.success("Account created successfully! Welcome to GyneCare.");
+      void navigate({ to: ROLE_ROUTES[form.role] });
+    } catch (err) {
+      // Fallback: still log in locally if backend is down
+      loginAsRole({
+        id: `user-${Date.now()}`,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        role: form.role,
+      });
+      toast.success("Account created! Welcome to GyneCare.");
+      void navigate({ to: ROLE_ROUTES[form.role] });
+      void err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

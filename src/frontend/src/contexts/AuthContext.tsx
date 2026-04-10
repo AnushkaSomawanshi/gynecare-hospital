@@ -5,7 +5,6 @@ import {
   setStoredUser,
 } from "@/lib/auth";
 import type { UserRole } from "@/types";
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
   createContext,
   useCallback,
@@ -28,7 +27,6 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { identity, loginStatus, clear } = useInternetIdentity();
   const [user, setUser] = useState<StoredUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,15 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     clearStoredUser();
     setUser(null);
-    clear();
-  }, [clear]);
-
-  const principal = useMemo(() => {
-    if (identity && loginStatus === "success") {
-      return identity.getPrincipal().toText();
-    }
-    return null;
-  }, [identity, loginStatus]);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -66,9 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       loginAsRole,
       logout,
-      principal,
+      principal: user?.id ?? null,
     }),
-    [user, isLoading, loginAsRole, logout, principal],
+    [user, isLoading, loginAsRole, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

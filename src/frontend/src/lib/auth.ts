@@ -1,10 +1,10 @@
-// Auth helpers using the authorization extension pattern
-// Wraps Internet Identity auth state for role-based access control
+// Auth helpers for JWT-based authentication with role-based access control
 
 import type { UserRole } from "@/types";
 
 export const ROLE_STORAGE_KEY = "gynecare_user_role";
 export const USER_STORAGE_KEY = "gynecare_user_data";
+export const TOKEN_STORAGE_KEY = "gynecare_token";
 
 export interface StoredUser {
   id: string;
@@ -32,6 +32,15 @@ export function setStoredUser(user: StoredUser): void {
 export function clearStoredUser(): void {
   sessionStorage.removeItem(USER_STORAGE_KEY);
   sessionStorage.removeItem(ROLE_STORAGE_KEY);
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export function getToken(): string | null {
+  return sessionStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+export function setToken(token: string): void {
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
 
 export function getDashboardRoute(role: UserRole): string {

@@ -1,72 +1,31 @@
-import { DOCTORS_DATA, HOSPITALS_DATA } from "@/lib/api";
+import {
+  DOCTORS_DATA,
+  HOSPITALS_DATA,
+  apiCancelAppointment,
+  apiCreateAppointment,
+  apiFetchAppointments,
+  apiFetchDoctors,
+  apiFetchHospitals,
+} from "@/lib/api";
 import type { Appointment, BookingData, TimeSlot } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-// ─── Mock data store for appointments (replaces backend until methods exist) ──
-
-const MOCK_APPOINTMENTS: Appointment[] = [
-  {
-    id: "apt1",
-    patientId: "user1",
-    patientName: "Prachi Desai",
-    doctorId: "d1",
-    doctorName: "Dr. Priya Sharma",
-    hospitalId: "h1",
-    hospitalName: "GyneCare Hospital — Pune Main",
-    department: "Obstetrics & Gynecology",
-    date: "2026-04-15",
-    timeSlot: "10:00",
-    type: "in-person",
-    status: "confirmed",
-    reason: "Regular prenatal checkup",
-    paymentStatus: "paid",
-    amount: 800,
-    createdAt: "2026-04-08T10:30:00Z",
-  },
-  {
-    id: "apt2",
-    patientId: "user1",
-    patientName: "Prachi Desai",
-    doctorId: "d2",
-    doctorName: "Dr. Anjali Kulkarni",
-    hospitalId: "h1",
-    hospitalName: "GyneCare Hospital — Pune Main",
-    department: "Infertility & IVF",
-    date: "2026-04-20",
-    timeSlot: "14:30",
-    type: "in-person",
-    status: "pending",
-    reason: "IVF consultation",
-    paymentStatus: "pending",
-    amount: 1200,
-    createdAt: "2026-04-08T11:00:00Z",
-  },
-];
-
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
-export function useAppointments(patientId?: string) {
+export function useAppointments(_patientId?: string) {
   return useQuery<Appointment[]>({
-    queryKey: ["appointments", patientId],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      if (!patientId) return MOCK_APPOINTMENTS;
-      return MOCK_APPOINTMENTS.filter((a) => a.patientId === patientId);
-    },
+    queryKey: ["appointments"],
+    queryFn: apiFetchAppointments,
     enabled: true,
   });
 }
 
-export function useDoctorAppointments(doctorId?: string) {
+export function useDoctorAppointments(_doctorId?: string) {
   return useQuery<Appointment[]>({
-    queryKey: ["doctor-appointments", doctorId],
-    queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 400));
-      if (!doctorId) return [];
-      return MOCK_APPOINTMENTS.filter((a) => a.doctorId === doctorId);
-    },
-    enabled: !!doctorId,
+    queryKey: ["appointments"],
+    queryFn: apiFetchAppointments,
+    enabled: true,
   });
 }
 
@@ -74,7 +33,8 @@ export function useAppointmentById(id: string) {
   return useQuery<Appointment | null>({
     queryKey: ["appointment", id],
     queryFn: async () => {
-      return MOCK_APPOINTMENTS.find((a) => a.id === id) ?? null;
+      const list = await apiFetchAppointments();
+      return list.find((a) => a.id === id) ?? null;
     },
     enabled: !!id,
   });
@@ -82,33 +42,28 @@ export function useAppointmentById(id: string) {
 
 export function useCreateAppointment() {
   const queryClient = useQueryClient();
-  return useMutation<Appointment, Error, Omit<Appointment, "id" | "createdAt">>(
-    {
-      mutationFn: async (data) => {
-        await new Promise((r) => setTimeout(r, 800));
-        const newAppointment: Appointment = {
-          ...data,
-          id: `apt${Date.now()}`,
-          createdAt: new Date().toISOString(),
-        };
-        MOCK_APPOINTMENTS.push(newAppointment);
-        return newAppointment;
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      },
+  return useMutation<
+    Appointment,
+    Error,
+    Omit<Appointment, "id" | "createdAt">
+  >({
+    mutationFn: (data) => {
+      // patientId/patientName come from JWT on the backend; strip them from the payload
+      const { patientId: _pid, patientName: _pname, ...rest } = data;
+      void _pid;
+      void _pname;
+      return apiCreateAppointment(rest);
     },
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+  });
 }
 
 export function useCancelAppointment() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: async (id) => {
-      await new Promise((r) => setTimeout(r, 400));
-      const apt = MOCK_APPOINTMENTS.find((a) => a.id === id);
-      if (apt) apt.status = "cancelled";
-    },
+    mutationFn: (id) => apiCancelAppointment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     },
@@ -134,12 +89,15 @@ export function useAvailableSlots(doctorId: string, date: string) {
         "16:00",
         "16:30",
       ];
-      const bookedTimes = MOCK_APPOINTMENTS.filter(
-        (a) =>
-          a.doctorId === doctorId &&
-          a.date === date &&
-          a.status !== "cancelled",
-      ).map((a) => a.timeSlot);
+      const allAppointments = await apiFetchAppointments();
+      const bookedTimes = allAppointments
+        .filter(
+          (a) =>
+            a.doctorId === doctorId &&
+            a.date === date &&
+            a.status !== "cancelled",
+        )
+        .map((a) => a.timeSlot);
       return times.map((t, i) => ({
         id: `slot-${i}`,
         time: t,
@@ -155,6 +113,18 @@ export function useAvailableSlots(doctorId: string, date: string) {
 export function useBookingWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [bookingData, setBookingData] = useState<BookingData>({});
+  const [doctorsList, setDoctorsList] = useState(DOCTORS_DATA);
+  const [hospitalsList, setHospitalsList] = useState(
+    HOSPITALS_DATA as Array<(typeof HOSPITALS_DATA)[number]>,
+  );
+
+  // Eagerly fetch from API for wizard use
+  useState(() => {
+    apiFetchDoctors().then(setDoctorsList).catch(() => {});
+    apiFetchHospitals()
+      .then((h) => setHospitalsList(h as typeof hospitalsList))
+      .catch(() => {});
+  });
 
   const updateBooking = (data: Partial<BookingData>) => {
     setBookingData((prev) => ({ ...prev, ...data }));
@@ -185,10 +155,8 @@ export function useBookingWizard() {
     { step: 6, label: "Confirm Booking", completed: false },
   ];
 
-  const selectedDoctor = DOCTORS_DATA.find(
-    (d) => d.id === bookingData.doctorId,
-  );
-  const selectedHospital = HOSPITALS_DATA.find(
+  const selectedDoctor = doctorsList.find((d) => d.id === bookingData.doctorId);
+  const selectedHospital = hospitalsList.find(
     (h) => h.id === bookingData.hospitalId,
   );
 
