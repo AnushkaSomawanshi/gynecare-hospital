@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { apiLogin } from "@/lib/api";
+import { setToken } from "@/lib/auth";
 import { isValidEmail } from "@/lib/utils";
 import type { UserRole } from "@/types";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -69,19 +71,40 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const doLogin = async (account: (typeof DEMO_ACCOUNTS)[number]) => {
+  const doLogin = async (email: string, password: string, demoAccount?: (typeof DEMO_ACCOUNTS)[number]) => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    loginAsRole({
-      id: `user-${account.role}`,
-      name: account.name,
-      email: account.email,
-      phone: account.phone,
-      role: account.role,
-    });
-    toast.success(`Welcome back, ${account.name.split(" ")[0]}!`);
-    void navigate({ to: ROLE_ROUTES[account.role] });
-    setLoading(false);
+    try {
+      const res = await apiLogin(email, password);
+      setToken(res.token);
+      loginAsRole({
+        id: String(res.user.id),
+        name: res.user.name,
+        email: res.user.email,
+        phone: res.user.phone,
+        role: res.user.role,
+        avatar: res.user.avatar,
+      });
+      const displayName = res.user.name.split(" ")[0];
+      toast.success(`Welcome back, ${displayName}!`);
+      void navigate({ to: ROLE_ROUTES[res.user.role] });
+    } catch (err) {
+      // Fall back to demo login if backend is unavailable
+      if (demoAccount) {
+        loginAsRole({
+          id: `user-${demoAccount.role}`,
+          name: demoAccount.name,
+          email: demoAccount.email,
+          phone: demoAccount.phone,
+          role: demoAccount.role,
+        });
+        toast.success(`Welcome back, ${demoAccount.name.split(" ")[0]}! (demo mode)`);
+        void navigate({ to: ROLE_ROUTES[demoAccount.role] });
+      } else {
+        toast.error(err instanceof Error ? err.message : "Login failed");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSendOtp = () => {
@@ -109,6 +132,9 @@ export default function LoginPage() {
         toast.error("Invalid OTP. Use 123456 for demo.");
         return;
       }
+      // OTP flow: use role-matched demo account
+      const demo = DEMO_ACCOUNTS.find((a) => a.role === role) ?? DEMO_ACCOUNTS[0];
+      await doLogin(demo.email, "demo1234", demo);
     } else {
       if (!isValidEmail(email)) {
         toast.error("Enter a valid email address");
@@ -118,19 +144,13 @@ export default function LoginPage() {
         toast.error("Password is required");
         return;
       }
+      const demoFallback = DEMO_ACCOUNTS.find((a) => a.email === email);
+      await doLogin(email, password, demoFallback);
     }
-
-    const demo =
-      DEMO_ACCOUNTS.find((a) => a.email === email) ??
-      DEMO_ACCOUNTS.find((a) => a.role === role);
-    if (!demo) {
-      toast.error("No account found. Try a demo account below.");
-      return;
-    }
-    await doLogin(demo);
   };
 
-  const loginAsDemo = (demo: (typeof DEMO_ACCOUNTS)[number]) => doLogin(demo);
+  const loginAsDemo = (demo: (typeof DEMO_ACCOUNTS)[number]) =>
+    doLogin(demo.email, "demo1234", demo);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex">
