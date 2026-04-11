@@ -1,26 +1,31 @@
 {
-  "overview": "A production-ready full-stack Hospital Management System for a Gynecology-focused Indian hospital, inspired by Sahyadri Hospitals. Features patient booking, doctor and admin dashboards, pregnancy & menstrual trackers, health packages, blogs, and a full public website experience.",
+  "overview": "GyneCare is a production-ready, full-stack MERN Hospital Management System for a gynecology-focused hospital chain in India. It includes a public website, multi-step appointment booking, role-based dashboards, and gynecology-specific modules including a pregnancy tracker and menstrual cycle tracker.",
   "features": [
-    "Multi-step online appointment booking",
-    "Patient dashboard with pregnancy & menstrual trackers",
-    "Doctor dashboard with prescription uploads",
-    "Admin dashboard with analytics and content management",
-    "Find A Doctor with search and filters",
-    "Health packages catalog",
-    "19 pages with full hospital navigation",
-    "Role-based access (Patient, Doctor, Admin)",
-    "Blue + White + Pink hospital theme",
-    "Responsive mobile-first design"
+    "Public hospital website with hero, specialities, doctor search, health packages, blogs, and testimonials",
+    "6-step appointment booking wizard (city → hospital → department → doctor → date/time → confirm)",
+    "Patient Dashboard with pregnancy tracker, menstrual cycle logger, and medical record uploads",
+    "Doctor Dashboard with daily schedule, patient list, and performance stats",
+    "Admin Dashboard for managing users, doctors, hospitals, content, and packages",
+    "JWT authentication with role-based access control (Patient, Doctor, Admin)",
+    "OTP simulation login",
+    "Full REST API: 11 route domains, 50+ endpoints",
+    "MongoDB with 10 collections and complete data seeder",
+    "Detailed README with MongoDB Compass setup guide"
   ],
   "category": "healthcare",
   "tags": [
+    "mern",
     "hospital",
     "healthcare",
     "gynecology",
-    "appointments",
+    "mongodb",
+    "express",
+    "react",
+    "nodejs",
     "india",
-    "patient-management",
-    "telemedicine"
+    "dashboard",
+    "appointments",
+    "jwt"
   ],
-  "last_updated": "2026-04-10T18:56:59.286Z"
+  "last_updated": "2026-04-11T02:48:24.796Z"
 }
